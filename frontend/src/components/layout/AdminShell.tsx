@@ -109,7 +109,7 @@ export function AdminShell() {
     <>
       <div className="px-5 py-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-400">
-          Kesariya 4.0
+          Kesariya 4.0 · Aaradhana Group
         </p>
         <h1 className="font-display mt-1 text-lg font-semibold">Event Control</h1>
         {(badges?.pendingApprovals ?? 0) > 0 && (
@@ -199,7 +199,9 @@ export function AdminShell() {
               <Menu className="h-5 w-5" />
             </button>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-navy-900">Kesariya Navratri 4.0</p>
+              <p className="truncate text-sm font-semibold text-navy-900">
+                Kesariya Navratri 4.0 · Aaradhana Group
+              </p>
               <p className="truncate text-xs text-navy-700/50">11–20 Oct 2026 · Surat</p>
             </div>
           </div>

@@ -45,6 +45,23 @@ export async function saveDayPricing(
   return data.data;
 }
 
+export type UpiAccountRow = {
+  id: string;
+  label: string;
+  upiId: string;
+  payeeName: string;
+  qrImageUrl: string | null;
+  instructions: string | null;
+  status: 'ACTIVE' | 'INACTIVE';
+  isMain: boolean;
+  isReceiving: boolean;
+  rotateLimitAmount: number;
+  sortOrder: number;
+  approvedCount: number;
+  receivedBase: number;
+  remainingToLimit: number;
+};
+
 export type PaymentSettings = {
   event: { id: string; name: string };
   upiId: string | null;
@@ -56,7 +73,16 @@ export type PaymentSettings = {
   displayQrUrl: string | null;
   supportWhatsapp: string | null;
   requireUtrForUpi: boolean;
+  defaultRotateLimitAmount: number;
   canEdit: boolean;
+  receivingAccount: UpiAccountRow | null;
+  accounts?: UpiAccountRow[];
+  statsDate?: string;
+};
+
+export type UpiStatsPayload = {
+  date: string;
+  accounts: UpiAccountRow[];
 };
 
 export async function getPaymentSettings(amount?: number) {
@@ -70,6 +96,63 @@ export async function updatePaymentSettings(payload: Record<string, unknown>) {
   const { data } = await apiClient.put<ApiSuccess<PaymentSettings>>(
     '/payment-settings',
     payload,
+  );
+  return data.data;
+}
+
+export async function getUpiStats(date?: string) {
+  const { data } = await apiClient.get<ApiSuccess<UpiStatsPayload>>(
+    '/payment-settings/upi-stats',
+    { params: date ? { date } : undefined },
+  );
+  return data.data;
+}
+
+export async function createUpiAccount(payload: {
+  label: string;
+  upiId: string;
+  payeeName: string;
+  qrImageUrl?: string | null;
+  instructions?: string | null;
+  rotateLimitAmount?: number | null;
+  setAsMain?: boolean;
+}) {
+  const { data } = await apiClient.post<ApiSuccess<UpiAccountRow>>(
+    '/payment-settings/accounts',
+    payload,
+  );
+  return data.data;
+}
+
+export async function updateUpiAccount(
+  id: string,
+  payload: {
+    label?: string;
+    upiId?: string;
+    payeeName?: string;
+    qrImageUrl?: string | null;
+    instructions?: string | null;
+    rotateLimitAmount?: number | null;
+    status?: 'ACTIVE' | 'INACTIVE';
+  },
+) {
+  const { data } = await apiClient.patch<ApiSuccess<UpiAccountRow>>(
+    `/payment-settings/accounts/${id}`,
+    payload,
+  );
+  return data.data;
+}
+
+export async function setMainUpiAccount(id: string) {
+  const { data } = await apiClient.post<ApiSuccess<UpiStatsPayload>>(
+    `/payment-settings/accounts/${id}/set-main`,
+  );
+  return data.data;
+}
+
+export async function setReceivingUpiAccount(id: string) {
+  const { data } = await apiClient.post<ApiSuccess<UpiStatsPayload>>(
+    `/payment-settings/accounts/${id}/set-receiving`,
   );
   return data.data;
 }

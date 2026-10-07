@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getPaymentSettings, updatePaymentSettings } from '../../api/pricing';
+import {
+  createUpiAccount,
+  getPaymentSettings,
+  setMainUpiAccount,
+  setReceivingUpiAccount,
+  updatePaymentSettings,
+  updateUpiAccount,
+  type UpiAccountRow,
+} from '../../api/pricing';
 import { uploadUpiQr } from '../../api/uploads';
 import { getErrorMessage } from '../../api/client';
 import { Button } from '../../components/ui/button';
@@ -9,34 +17,187 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { mediaUrl } from '../../lib/uploads';
 
+function rupee(n: number) {
+  return `₹${n.toLocaleString('en-IN')}`;
+}
+
+function AccountCard({
+  account,
+  busy,
+  onSetMain,
+  onSetReceiving,
+  onDeactivate,
+  onActivate,
+}: {
+  account: UpiAccountRow;
+  busy: boolean;
+  onSetMain: () => void;
+  onSetReceiving: () => void;
+  onDeactivate: () => void;
+  onActivate: () => void;
+}) {
+  const pct =
+    account.rotateLimitAmount > 0
+      ? Math.min(100, Math.round((account.receivedBase / account.rotateLimitAmount) * 100))
+      : 0;
+
+  return (
+    <Card className="space-y-3 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="font-display text-lg font-semibold text-navy-900">{account.label}</p>
+          <p className="font-mono text-sm text-navy-800">{account.upiId}</p>
+          <p className="text-xs text-navy-700/55">{account.payeeName}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {account.isMain && (
+            <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">
+              Main
+            </span>
+          )}
+          {account.isReceiving && (
+            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+              Receiving now
+            </span>
+          )}
+          {account.status === 'INACTIVE' && (
+            <span className="rounded-full bg-navy-700/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy-700/60">
+              Inactive
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-1 flex justify-between text-xs text-navy-700/60">
+          <span>
+            Today (approved): <strong className="text-navy-900">{rupee(account.receivedBase)}</strong>
+          </span>
+          <span>
+            Limit {rupee(account.rotateLimitAmount)} · left {rupee(account.remainingToLimit)}
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-navy-700/10">
+          <div
+            className={`h-full rounded-full ${pct >= 100 ? 'bg-red-500' : 'bg-orange-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <p className="mt-1 text-[11px] text-navy-700/45">
+          {account.approvedCount} approved sale{account.approvedCount === 1 ? '' : 's'} today
+        </p>
+      </div>
+
+      {account.qrImageUrl && mediaUrl(account.qrImageUrl) && (
+        <img
+          src={mediaUrl(account.qrImageUrl)!}
+          alt={`${account.label} QR`}
+          className="h-24 w-24 rounded-lg border border-navy-700/10 bg-white object-contain p-1"
+        />
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {!account.isMain && account.status === 'ACTIVE' && (
+          <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={onSetMain}>
+            Set main
+          </Button>
+        )}
+        {!account.isReceiving && account.status === 'ACTIVE' && (
+          <Button type="button" size="sm" disabled={busy} onClick={onSetReceiving}>
+            Set receiving
+          </Button>
+        )}
+        {account.status === 'ACTIVE' ? (
+          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onDeactivate}>
+            Deactivate
+          </Button>
+        ) : (
+          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onActivate}>
+            Activate
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export function AdminPaymentSettingsPage() {
   const qc = useQueryClient();
   const query = useQuery({ queryKey: ['payment-settings'], queryFn: () => getPaymentSettings() });
+
+  const [supportWa, setSupportWa] = useState('');
+  const [sharedInstructions, setSharedInstructions] = useState('');
+  const [defaultLimit, setDefaultLimit] = useState('100000');
+  const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
+
+  const [label, setLabel] = useState('');
   const [upiId, setUpiId] = useState('');
   const [payee, setPayee] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [limit, setLimit] = useState('100000');
   const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [supportWa, setSupportWa] = useState('');
+  const [setAsMain, setSetAsMain] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
 
   useEffect(() => {
     if (!query.data) return;
-    setUpiId(query.data.upiId ?? '');
-    setPayee(query.data.upiPayeeName ?? '');
-    setInstructions(query.data.upiInstructions ?? '');
-    setQrUrl(query.data.upiQrImageUrl);
     setSupportWa(query.data.supportWhatsapp ?? '');
+    setSharedInstructions(query.data.upiInstructions ?? '');
+    setDefaultLimit(String(query.data.defaultRotateLimitAmount ?? 100000));
   }, [query.data]);
 
-  const mutation = useMutation({
-    mutationFn: updatePaymentSettings,
+  const invalidate = async () => {
+    await qc.invalidateQueries({ queryKey: ['payment-settings'] });
+  };
+
+  const globalsMutation = useMutation({
+    mutationFn: () =>
+      updatePaymentSettings({
+        supportWhatsapp: supportWa,
+        upiInstructions: sharedInstructions,
+        defaultRotateLimitAmount: Number(defaultLimit) || 100000,
+      }),
     onSuccess: async () => {
       setError(null);
-      setOk(true);
-      await qc.invalidateQueries({ queryKey: ['payment-settings'] });
-      setTimeout(() => setOk(false), 2500);
+      setOk('Shared settings saved.');
+      await invalidate();
+      setTimeout(() => setOk(null), 2500);
+    },
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createUpiAccount({
+        label,
+        upiId,
+        payeeName: payee,
+        instructions: instructions || null,
+        qrImageUrl: qrUrl,
+        rotateLimitAmount: Number(limit) || 100000,
+        setAsMain,
+      }),
+    onSuccess: async () => {
+      setError(null);
+      setOk('UPI account added.');
+      setLabel('');
+      setUpiId('');
+      setPayee('');
+      setInstructions('');
+      setQrUrl(null);
+      setSetAsMain(false);
+      await invalidate();
+      setTimeout(() => setOk(null), 2500);
+    },
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  const actionMutation = useMutation({
+    mutationFn: async (fn: () => Promise<unknown>) => fn(),
+    onSuccess: async () => {
+      setError(null);
+      await invalidate();
     },
     onError: (err) => setError(getErrorMessage(err)),
   });
@@ -58,7 +219,8 @@ export function AdminPaymentSettingsPage() {
   if (query.isLoading) return <p className="text-sm text-navy-700/60">Loading…</p>;
   if (query.error) return <p className="text-sm text-red-600">{getErrorMessage(query.error)}</p>;
 
-  const liveQr = mediaUrl(qrUrl) || mediaUrl(query.data?.qrCodeDataUrl);
+  const accounts = query.data?.accounts ?? [];
+  const receiving = query.data?.receivingAccount;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -66,10 +228,14 @@ export function AdminPaymentSettingsPage() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
           Settlement
         </p>
-        <h1 className="font-display text-2xl font-bold text-navy-900">Payment settings</h1>
+        <h1 className="font-display text-2xl font-bold text-navy-900">Payment accounts</h1>
         <p className="mt-1 text-sm text-navy-700/70">
-          UPI + QR for sellers. Payment screenshot with booking. Support WhatsApp for help desk.
+          Multiple UPI accounts. Sellers pay the <strong>receiving</strong> account. After admin
+          approval, day-wise base totals rotate when the limit is reached.
         </p>
+        {query.data?.statsDate && (
+          <p className="mt-1 text-xs text-navy-700/50">Today (IST): {query.data.statsDate}</p>
+        )}
       </div>
 
       {error && (
@@ -79,13 +245,67 @@ export function AdminPaymentSettingsPage() {
       )}
       {ok && (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Payment settings saved.
+          {ok}
         </p>
       )}
 
+      {receiving && (
+        <Card className="space-y-2 border-emerald-200 bg-emerald-50/50 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+            Sellers pay this account now
+          </p>
+          <p className="font-display text-lg font-semibold text-navy-900">{receiving.label}</p>
+          <p className="font-mono text-base">{receiving.upiId}</p>
+          <p className="text-sm text-navy-700/65">
+            Today received {rupee(receiving.receivedBase)} / {rupee(receiving.rotateLimitAmount)}
+          </p>
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        <h2 className="font-display text-lg font-semibold text-navy-900">UPI accounts</h2>
+        {accounts.length === 0 && (
+          <p className="text-sm text-navy-700/55">No accounts yet — add the first UPI below.</p>
+        )}
+        {accounts.map((a) => (
+          <AccountCard
+            key={a.id}
+            account={a}
+            busy={actionMutation.isPending}
+            onSetMain={() => actionMutation.mutate(() => setMainUpiAccount(a.id))}
+            onSetReceiving={() => actionMutation.mutate(() => setReceivingUpiAccount(a.id))}
+            onDeactivate={() =>
+              actionMutation.mutate(() => updateUpiAccount(a.id, { status: 'INACTIVE' }))
+            }
+            onActivate={() =>
+              actionMutation.mutate(() => updateUpiAccount(a.id, { status: 'ACTIVE' }))
+            }
+          />
+        ))}
+      </div>
+
       <Card className="space-y-4">
+        <h2 className="font-display text-lg font-semibold">Add UPI account</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label>Label</Label>
+            <Input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="HDFC Main"
+            />
+          </div>
+          <div>
+            <Label>Payee name</Label>
+            <Input
+              value={payee}
+              onChange={(e) => setPayee(e.target.value)}
+              placeholder="Kesariya Navratri 4.0"
+            />
+          </div>
+        </div>
         <div>
-          <Label>UPI ID (VPA)</Label>
+          <Label>UPI ID</Label>
           <Input
             value={upiId}
             onChange={(e) => setUpiId(e.target.value)}
@@ -93,22 +313,64 @@ export function AdminPaymentSettingsPage() {
           />
         </div>
         <div>
-          <Label>Payee name</Label>
-          <Input
-            value={payee}
-            onChange={(e) => setPayee(e.target.value)}
-            placeholder="Kesariya Navratri 4.0"
-          />
+          <Label>Day-wise rotate limit (₹ admin base)</Label>
+          <Input value={limit} onChange={(e) => setLimit(e.target.value)} inputMode="numeric" />
         </div>
         <div>
-          <Label>Instructions for sellers</Label>
+          <Label>Instructions (optional)</Label>
           <textarea
-            className="min-h-[100px] w-full rounded-lg border border-navy-700/15 bg-white px-3 py-2 text-sm"
+            className="min-h-[72px] w-full rounded-lg border border-navy-700/15 bg-white px-3 py-2 text-sm"
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
           />
         </div>
+        <div className="space-y-2">
+          <Label>QR image (optional)</Label>
+          <Input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={uploadingQr}
+            onChange={(e) => void onQrFile(e.target.files?.[0] ?? null)}
+          />
+          {qrUrl && mediaUrl(qrUrl) && (
+            <img
+              src={mediaUrl(qrUrl)!}
+              alt="New QR"
+              className="h-28 w-28 rounded-lg border bg-white object-contain p-1"
+            />
+          )}
+        </div>
+        <label className="flex items-center gap-2 text-sm text-navy-800">
+          <input
+            type="checkbox"
+            checked={setAsMain}
+            onChange={(e) => setSetAsMain(e.target.checked)}
+          />
+          Set as main + receiving now
+        </label>
+        <Button
+          disabled={
+            createMutation.isPending || !label.trim() || !upiId.trim() || !payee.trim()
+          }
+          onClick={() => createMutation.mutate()}
+        >
+          Add account
+        </Button>
+      </Card>
 
+      <Card className="space-y-4">
+        <h2 className="font-display text-lg font-semibold">Shared settings</h2>
+        <div>
+          <Label>Default day-wise rotate limit (₹)</Label>
+          <Input
+            value={defaultLimit}
+            onChange={(e) => setDefaultLimit(e.target.value)}
+            inputMode="numeric"
+          />
+          <p className="mt-1 text-xs text-navy-700/50">
+            Applied to new accounts. Count = approved sale baseAmount for the IST day.
+          </p>
+        </div>
         <div>
           <Label>Seller support WhatsApp</Label>
           <Input
@@ -116,76 +378,27 @@ export function AdminPaymentSettingsPage() {
             onChange={(e) => setSupportWa(e.target.value)}
             placeholder="9198XXXXXXXX"
           />
-          <p className="mt-1 text-xs text-navy-700/50">
-            Digits with country code. Sellers use this for confirmation help.
-          </p>
         </div>
-
-        <div className="space-y-2">
-          <Label>QR code</Label>
-          <p className="text-xs text-navy-700/60">
-            Auto-generated from UPI ID. Optionally upload your own QR image.
-          </p>
-          {liveQr && (
-            <img
-              src={liveQr}
-              alt="UPI QR preview"
-              className="h-48 w-48 rounded-lg border border-navy-700/10 bg-white object-contain p-2"
-            />
-          )}
-          <Input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={uploadingQr}
-            onChange={(e) => void onQrFile(e.target.files?.[0] ?? null)}
+        <div>
+          <Label>Fallback instructions</Label>
+          <textarea
+            className="min-h-[80px] w-full rounded-lg border border-navy-700/15 bg-white px-3 py-2 text-sm"
+            value={sharedInstructions}
+            onChange={(e) => setSharedInstructions(e.target.value)}
           />
-          {uploadingQr && <p className="text-xs text-orange-600">Uploading QR…</p>}
-          {qrUrl && (
-            <Button type="button" variant="outline" size="sm" onClick={() => setQrUrl(null)}>
-              Clear custom QR (use auto-generated)
-            </Button>
-          )}
         </div>
-
-        <Button
-          disabled={mutation.isPending}
-          onClick={() =>
-            mutation.mutate({
-              upiId,
-              upiPayeeName: payee,
-              upiInstructions: instructions,
-              upiQrImageUrl: qrUrl,
-              supportWhatsapp: supportWa,
-              requireUtrForUpi: false,
-            })
-          }
-        >
-          Save settings
+        <Button disabled={globalsMutation.isPending} onClick={() => globalsMutation.mutate()}>
+          Save shared settings
         </Button>
       </Card>
 
-      <Card className="space-y-3 border-navy-800/10 bg-navy-950 p-5 text-white">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-400">
-          How seller sees payment screen
-        </p>
-        <p className="font-display text-lg font-semibold">{payee || 'Kesariya Navratri 4.0'}</p>
-        <p className="font-mono text-base">{upiId || 'upi@example'}</p>
-        {instructions && <p className="text-sm text-white/65">{instructions}</p>}
-        {liveQr && (
-          <img
-            src={liveQr}
-            alt="Seller-facing QR preview"
-            className="mt-2 h-36 w-36 rounded-lg bg-white object-contain p-2"
-          />
-        )}
-      </Card>
-
       <Card className="space-y-2 text-sm text-navy-700/70">
-        <p className="font-semibold text-navy-900">Seller flow</p>
+        <p className="font-semibold text-navy-900">How rotation works</p>
         <ol className="list-decimal space-y-1 pl-5">
-          <li>Seller books tickets + pays UPI/QR + uploads screenshot → payment PAID.</li>
-          <li>Admin approves only when payment is PAID.</li>
-          <li>Admin marks ticket sent. Sellers use Support WhatsApp for help.</li>
+          <li>Sellers always see the current <strong>receiving</strong> UPI.</li>
+          <li>Admin approves a sale → that sale&apos;s baseAmount counts for today.</li>
+          <li>When today&apos;s total ≥ account limit → next active UPI becomes receiving.</li>
+          <li>Next IST day totals reset. Use Set main to force payments back.</li>
         </ol>
       </Card>
     </div>

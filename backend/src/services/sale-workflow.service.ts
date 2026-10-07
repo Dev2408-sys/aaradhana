@@ -14,6 +14,7 @@ import {
   recomputeSaleSettlementStatuses,
 } from './ledger.service';
 import { createNotifications } from './notification.service';
+import { maybeRotateAfterApproval } from './upi-account.service';
 
 function isAdmin(user: AuthUser) {
   return user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
@@ -230,6 +231,13 @@ export async function approveSale(
           entityId: sale.id,
         },
       ]);
+
+      await maybeRotateAfterApproval(
+        sale.upiAccountId,
+        actor.id,
+        ipAddress,
+        tx,
+      );
     },
     { maxWait: 30000, timeout: 60000 },
   );

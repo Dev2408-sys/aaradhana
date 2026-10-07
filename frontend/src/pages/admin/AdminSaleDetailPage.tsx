@@ -189,9 +189,19 @@ export function AdminSaleDetailPage() {
         </div>
       </Card>
 
-      {(sale.adminPaymentProofUrl || sale.adminPaymentUtr) && (
+      {(sale.adminPaymentProofUrl || sale.adminPaymentUtr || sale.upiIdSnapshot) && (
         <Card className="border-emerald-200 bg-emerald-50/40 space-y-2">
           <p className="text-xs uppercase text-navy-700/50">Seller payment proof</p>
+          {(sale.upiIdSnapshot || sale.upiAccountLabel) && (
+            <p className="text-sm text-navy-900">
+              Paid to:{' '}
+              <strong>
+                {sale.upiAccountLabel ? `${sale.upiAccountLabel} · ` : ''}
+                {sale.upiIdSnapshot}
+              </strong>
+              {sale.upiPayeeNameSnapshot ? ` (${sale.upiPayeeNameSnapshot})` : ''}
+            </p>
+          )}
           <p className="text-xs text-navy-700/60">
             Amount claimed: {rupee(sale.baseAmount)} · Settlement: {sale.settlementStatus}
           </p>

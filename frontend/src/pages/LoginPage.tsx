@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { getErrorMessage } from '../api/client';
 import { AuthBrandPanel } from '../components/auth/AuthBrandPanel';
@@ -11,7 +11,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import type { UserRole } from '../types/auth';
-import { DEV_LOGIN_ACCOUNTS } from '../lib/navratri-days';
+import { BRAND } from '../lib/brand';
 
 const loginSchema = z.object({
   mobile: z.string().min(10, 'Enter a valid 10-digit mobile'),
@@ -39,7 +39,6 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(state?.notice ?? null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showDemo, setShowDemo] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
 
   const {
@@ -77,17 +76,36 @@ export function LoginPage() {
   });
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2">
+    <div className="min-h-screen lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <AuthBrandPanel
         title="Seller / Admin login"
-        subtitle="Sign in to book Gold & VIP tickets, manage approvals, or run event operations for Kesariya Navratri 4.0."
+        subtitle="Book Gold & VIP tickets, manage approvals, and run event operations — all in one place."
       />
+
+      {/* Mobile brand strip (desktop panel is lg+) */}
+      <div className="border-b border-navy-700/8 bg-[#2E0F63] px-5 py-5 lg:hidden">
+        <Link to="/" className="inline-flex items-center gap-3">
+          <img src={BRAND.logoSrc} alt={BRAND.eventFull} className="h-11 w-auto" />
+          <span className="h-8 w-px bg-[#F6C243]/50" aria-hidden />
+          <img
+            src={BRAND.aaradhanaLogoSrc}
+            alt={BRAND.group}
+            className="h-11 w-11 rounded-full ring-1 ring-[#F6C243]/50"
+          />
+          <span>
+            <span className="block font-display text-sm font-bold text-white">
+              {BRAND.eventShort}
+            </span>
+            <span className="block text-xs font-semibold text-[#F6C243]">{BRAND.group}</span>
+          </span>
+        </Link>
+      </div>
 
       <div className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-md space-y-6">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
-              Kesariya 4.0
+              {BRAND.shortWithGroup}
             </p>
             <h2 className="font-display mt-1 text-2xl font-bold text-navy-900">Welcome back</h2>
             <p className="mt-1 text-sm text-navy-700/65">
@@ -176,40 +194,6 @@ export function LoginPage() {
             <p className="mt-3 text-xs text-navy-700/50">
               After activation, sign in here and keep your profile & password updated.
             </p>
-          </div>
-
-          <div>
-            <button
-              type="button"
-              className="text-xs font-semibold text-navy-700/50 hover:text-orange-600"
-              onClick={() => setShowDemo((v) => !v)}
-            >
-              {showDemo ? 'Hide demo accounts' : 'Show demo accounts'}
-            </button>
-            {showDemo && (
-              <div className="mt-3 space-y-2 rounded-2xl border border-navy-700/10 bg-white p-3">
-                <p className="text-xs text-navy-700/60">
-                  Password: <span className="font-mono font-semibold">Kesariya@123</span>
-                </p>
-                {DEV_LOGIN_ACCOUNTS.map((acct) => (
-                  <button
-                    key={acct.mobile}
-                    type="button"
-                    className="flex w-full items-center justify-between rounded-xl bg-surface px-3 py-2 text-left text-sm hover:bg-orange-50"
-                    onClick={() => {
-                      setValue('mobile', acct.mobile);
-                      setValue('password', 'Kesariya@123');
-                    }}
-                  >
-                    <span>
-                      <span className="font-semibold text-navy-900">{acct.role}</span>
-                      <span className="mt-0.5 block text-xs text-navy-700/55">{acct.name}</span>
-                    </span>
-                    <span className="font-mono text-xs text-orange-600">{acct.mobile}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>

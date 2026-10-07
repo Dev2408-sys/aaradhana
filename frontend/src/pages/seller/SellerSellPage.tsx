@@ -520,6 +520,14 @@ export function SellerSellPage() {
             {upi && (
               <>
                 <div className="rounded-[var(--radius-md)] bg-surface px-3.5 py-3">
+                  <p className="mb-2 rounded-md bg-orange-500/10 px-2 py-1 text-[11px] font-semibold text-orange-700">
+                    Pay this account only — wrong UPI will delay approval
+                  </p>
+                  {upi.receivingAccount?.label && (
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-700/45">
+                      Account · {upi.receivingAccount.label}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-navy-700/45">

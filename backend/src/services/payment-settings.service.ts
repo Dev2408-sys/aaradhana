@@ -3,6 +3,14 @@ import type { AuthUser } from '../types/auth-user';
 import { ForbiddenError, NotFoundError, ValidationAppError } from '../utils/errors';
 import { createAuditLog } from './audit.service';
 import { buildUpiDeepLink, generateUpiQrDataUrl } from '../utils/upi-qr';
+import {
+  approvedBaseTotalForAccount,
+  ensurePaymentSettings,
+  getReceivingUpiAccount,
+  listAccountDayStats,
+  mapUpiAccount,
+  syncLegacyPaymentSettings,
+} from './upi-account.service';
 
 function isAdmin(user: AuthUser) {
   return user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
@@ -19,26 +27,27 @@ async function activeEvent(eventId?: string) {
   return event;
 }
 
-async function mapSettings(
-  settings: {
-    id: string;
-    eventId: string;
-    upiId: string | null;
-    upiPayeeName: string | null;
-    upiInstructions: string | null;
-    upiQrImageUrl: string | null;
-    supportWhatsapp: string | null;
-    requireUtrForUpi: boolean;
-  },
+async function mapReceivingPayload(
   event: { id: string; name: string },
   actor: AuthUser,
   amount?: number | null,
 ) {
-  const upiId = settings.upiId?.trim() || null;
+  await ensurePaymentSettings(event.id);
+  const settings = await prisma.paymentSettings.findUniqueOrThrow({
+    where: { eventId: event.id },
+  });
+  const receiving = await getReceivingUpiAccount(event.id);
+
+  const upiId = receiving?.upiId?.trim() || settings.upiId?.trim() || null;
+  const upiPayeeName = receiving?.payeeName || settings.upiPayeeName;
+  const upiQrImageUrl = receiving?.qrImageUrl || settings.upiQrImageUrl;
+  const upiInstructions =
+    receiving?.instructions || settings.upiInstructions;
+
   const deepLink = upiId
     ? buildUpiDeepLink({
         upiId,
-        payeeName: settings.upiPayeeName,
+        payeeName: upiPayeeName,
         amount: amount ?? null,
         note: 'Kesariya Navratri 4.0',
       })
@@ -53,19 +62,32 @@ async function mapSettings(
     }
   }
 
+  const receivingStats = receiving
+    ? await approvedBaseTotalForAccount(receiving.id)
+    : null;
+
+  const dayStats = isAdmin(actor)
+    ? await listAccountDayStats(event.id)
+    : null;
+
   return {
     event: { id: event.id, name: event.name },
     upiId,
-    upiPayeeName: settings.upiPayeeName,
-    upiInstructions: settings.upiInstructions,
-    upiQrImageUrl: settings.upiQrImageUrl,
+    upiPayeeName,
+    upiInstructions,
+    upiQrImageUrl,
     upiDeepLink: deepLink,
     qrCodeDataUrl,
-    /** Prefer custom uploaded QR, else generated */
-    displayQrUrl: settings.upiQrImageUrl || qrCodeDataUrl,
+    displayQrUrl: upiQrImageUrl || qrCodeDataUrl,
     supportWhatsapp: settings.supportWhatsapp?.replace(/\D/g, '') || null,
     requireUtrForUpi: false,
+    defaultRotateLimitAmount: Number(settings.defaultRotateLimitAmount),
     canEdit: isAdmin(actor),
+    receivingAccount: receiving
+      ? mapUpiAccount(receiving, receivingStats ?? undefined)
+      : null,
+    accounts: dayStats?.accounts ?? undefined,
+    statsDate: dayStats?.date ?? undefined,
   };
 }
 
@@ -75,26 +97,20 @@ export async function getPaymentSettings(
   amount?: number | null,
 ) {
   const event = await activeEvent(eventId);
-  let settings = await prisma.paymentSettings.findUnique({
-    where: { eventId: event.id },
-  });
-  if (!settings) {
-    settings = await prisma.paymentSettings.create({
-      data: {
-        eventId: event.id,
-        upiId: 'kesariya@upi',
-        upiPayeeName: 'Kesariya Navratri 4.0',
-        upiInstructions:
-          'Scan QR or pay via UPI, then upload payment screenshot with the sale.',
-        supportWhatsapp: '919998887766',
-        requireUtrForUpi: false,
-      },
-    });
-  }
-
-  return mapSettings(settings, event, actor, amount);
+  return mapReceivingPayload(event, actor, amount);
 }
 
+export async function getUpiStats(actor: AuthUser, date?: string, eventId?: string) {
+  if (!isAdmin(actor)) throw new ForbiddenError('Only admin can view UPI stats');
+  const event = await activeEvent(eventId);
+  await ensurePaymentSettings(event.id);
+  return listAccountDayStats(event.id, date);
+}
+
+/**
+ * Legacy single-UPI update — upserts/updates the receiving (or creates) account
+ * and shared settings (support WhatsApp, default rotate limit, instructions).
+ */
 export async function updatePaymentSettings(
   actor: AuthUser,
   input: {
@@ -105,6 +121,7 @@ export async function updatePaymentSettings(
     upiQrImageUrl?: string | null;
     supportWhatsapp?: string | null;
     requireUtrForUpi?: boolean;
+    defaultRotateLimitAmount?: number | null;
   },
   ipAddress?: string,
 ) {
@@ -113,6 +130,8 @@ export async function updatePaymentSettings(
   }
 
   const event = await activeEvent(input.eventId);
+  await ensurePaymentSettings(event.id);
+
   const upiId = input.upiId?.trim() || null;
   if (upiId && !/^[a-zA-Z0-9.\-_]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
     throw new ValidationAppError('Enter a valid UPI ID (example: name@upi)');
@@ -125,39 +144,85 @@ export async function updatePaymentSettings(
     throw new ValidationAppError('Support WhatsApp must be 10–15 digits (with country code)');
   }
 
-  const settings = await prisma.paymentSettings.upsert({
-    where: { eventId: event.id },
-    update: {
-      upiId,
-      upiPayeeName: input.upiPayeeName?.trim() || null,
-      upiInstructions: input.upiInstructions?.trim() || null,
-      ...(input.upiQrImageUrl !== undefined
-        ? { upiQrImageUrl: input.upiQrImageUrl?.trim() || null }
-        : {}),
-      ...(input.supportWhatsapp !== undefined ? { supportWhatsapp } : {}),
-      requireUtrForUpi: false,
-    },
-    create: {
-      eventId: event.id,
-      upiId,
-      upiPayeeName: input.upiPayeeName?.trim() || null,
-      upiInstructions: input.upiInstructions?.trim() || null,
-      upiQrImageUrl: input.upiQrImageUrl?.trim() || null,
-      supportWhatsapp: supportWhatsapp || '919998887766',
-      requireUtrForUpi: false,
-    },
+  if (
+    input.defaultRotateLimitAmount != null &&
+    (!Number.isFinite(input.defaultRotateLimitAmount) ||
+      input.defaultRotateLimitAmount <= 0)
+  ) {
+    throw new ValidationAppError('Default rotate limit must be a positive number');
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentSettings.update({
+      where: { eventId: event.id },
+      data: {
+        ...(input.upiInstructions !== undefined
+          ? { upiInstructions: input.upiInstructions?.trim() || null }
+          : {}),
+        ...(input.supportWhatsapp !== undefined ? { supportWhatsapp } : {}),
+        ...(input.defaultRotateLimitAmount != null
+          ? { defaultRotateLimitAmount: input.defaultRotateLimitAmount }
+          : {}),
+        requireUtrForUpi: false,
+      },
+    });
+
+    if (upiId) {
+      let receiving = await tx.upiAccount.findFirst({
+        where: { eventId: event.id, isReceiving: true },
+      });
+      if (!receiving) {
+        receiving = await tx.upiAccount.findFirst({
+          where: { eventId: event.id, status: 'ACTIVE' },
+          orderBy: { sortOrder: 'asc' },
+        });
+      }
+
+      if (receiving) {
+        await tx.upiAccount.update({
+          where: { id: receiving.id },
+          data: {
+            upiId,
+            payeeName: input.upiPayeeName?.trim() || receiving.payeeName,
+            ...(input.upiQrImageUrl !== undefined
+              ? { qrImageUrl: input.upiQrImageUrl?.trim() || null }
+              : {}),
+            ...(input.upiInstructions !== undefined
+              ? { instructions: input.upiInstructions?.trim() || null }
+              : {}),
+            isReceiving: true,
+          },
+        });
+      } else {
+        await tx.upiAccount.create({
+          data: {
+            eventId: event.id,
+            label: input.upiPayeeName?.trim() || 'Main UPI',
+            upiId,
+            payeeName: input.upiPayeeName?.trim() || 'Kesariya Navratri 4.0',
+            qrImageUrl: input.upiQrImageUrl?.trim() || null,
+            instructions: input.upiInstructions?.trim() || null,
+            status: 'ACTIVE',
+            isMain: true,
+            isReceiving: true,
+            sortOrder: 0,
+          },
+        });
+      }
+      await syncLegacyPaymentSettings(event.id, tx);
+    }
   });
 
   await createAuditLog({
     userId: actor.id,
     action: 'PAYMENT_SETTINGS_UPDATED',
     entityType: 'payment_settings',
-    entityId: settings.id,
+    entityId: event.id,
     newValue: {
-      upiId: settings.upiId,
-      upiPayeeName: settings.upiPayeeName,
-      upiQrImageUrl: settings.upiQrImageUrl,
-      supportWhatsapp: settings.supportWhatsapp,
+      upiId,
+      upiPayeeName: input.upiPayeeName,
+      supportWhatsapp,
+      defaultRotateLimitAmount: input.defaultRotateLimitAmount,
     },
     ipAddress,
   });

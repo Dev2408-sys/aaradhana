@@ -25,6 +25,10 @@ export interface SaleSummary {
   deliveryStatus: string;
   adminPaymentUtr?: string | null;
   adminPaymentProofUrl?: string | null;
+  upiAccountId?: string | null;
+  upiIdSnapshot?: string | null;
+  upiPayeeNameSnapshot?: string | null;
+  upiAccountLabel?: string | null;
   approvedAt?: string | null;
   ticketsTransferredAt?: string | null;
   whatsappSentAt?: string | null;

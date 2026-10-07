@@ -115,4 +115,107 @@ describe('day pricing + UPI settings', () => {
       /screenshot|upload|proof/i,
     );
   });
+
+  it('supports multiple UPI accounts and day-wise rotate after approve', async () => {
+    const event = await prisma.event.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { startDate: 'asc' },
+    });
+    expect(event).toBeTruthy();
+
+    // Reset accounts for a clean rotate check
+    await prisma.sale.updateMany({
+      where: { eventId: event!.id, upiAccountId: { not: null } },
+      data: { upiAccountId: null },
+    });
+    await prisma.upiAccount.deleteMany({ where: { eventId: event!.id } });
+
+    const a1 = await request(app)
+      .post('/api/payment-settings/accounts')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        label: 'Account A',
+        upiId: 'rotate-a@upi',
+        payeeName: 'Kesariya A',
+        rotateLimitAmount: 500,
+        setAsMain: true,
+      });
+    expect(a1.status).toBe(201);
+    expect(a1.body.data.isReceiving).toBe(true);
+
+    const a2 = await request(app)
+      .post('/api/payment-settings/accounts')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        label: 'Account B',
+        upiId: 'rotate-b@upi',
+        payeeName: 'Kesariya B',
+        rotateLimitAmount: 500,
+      });
+    expect(a2.status).toBe(201);
+
+    const sellerView = await request(app)
+      .get('/api/payment-settings')
+      .set('Authorization', `Bearer ${sellerToken}`);
+    expect(sellerView.status).toBe(200);
+    expect(sellerView.body.data.upiId).toBe('rotate-a@upi');
+    expect(sellerView.body.data.receivingAccount?.label).toBe('Account A');
+
+    const types = await request(app)
+      .get('/api/ticket-types')
+      .set('Authorization', `Bearer ${sellerToken}`);
+    const goldId = types.body.data.ticketTypes.find(
+      (t: { code: string }) => t.code === 'GOLD',
+    ).id;
+    const basePrice = Number(
+      types.body.data.ticketTypes.find((t: { code: string }) => t.code === 'GOLD')
+        .dayPricing?.[0]?.basePrice ?? 400,
+    );
+
+    // Create enough approved base to exceed 500 on Account A
+    const qty = Math.ceil(600 / basePrice);
+    const mobile = `92${String(Date.now()).slice(-8)}`;
+    const created = await request(app)
+      .post('/api/sales')
+      .set('Authorization', `Bearer ${sellerToken}`)
+      .send({
+        eventDay: 1,
+        customer: { name: 'Rotate Test', mobile },
+        items: [{ ticketTypeId: goldId, quantity: qty, sellingPrice: 799 }],
+        adminPaymentProofUrl: '/uploads/payment-proofs/rotate-test.jpg',
+      });
+    expect(created.status).toBe(201);
+    expect(created.body.data.upiIdSnapshot).toBe('rotate-a@upi');
+    expect(created.body.data.upiAccountLabel).toBe('Account A');
+
+    // Pending approval must NOT rotate yet
+    let settings = await request(app)
+      .get('/api/payment-settings')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(settings.body.data.receivingAccount?.upiId).toBe('rotate-a@upi');
+
+    const approve = await request(app)
+      .post(`/api/sales/${created.body.data.id}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        confirmCustomerName: 'Rotate Test',
+        confirmCustomerMobile: mobile,
+      });
+    expect(approve.status).toBe(200);
+
+    settings = await request(app)
+      .get('/api/payment-settings')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(settings.body.data.receivingAccount?.upiId).toBe('rotate-b@upi');
+
+    const stats = await request(app)
+      .get('/api/payment-settings/upi-stats')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(stats.status).toBe(200);
+    const accountA = stats.body.data.accounts.find(
+      (a: { upiId: string }) => a.upiId === 'rotate-a@upi',
+    );
+    expect(accountA.receivedBase).toBeGreaterThanOrEqual(500);
+    expect(accountA.approvedCount).toBeGreaterThanOrEqual(1);
+  });
 });

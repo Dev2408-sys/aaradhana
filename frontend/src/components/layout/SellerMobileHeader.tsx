@@ -81,6 +81,9 @@ export function SellerHomeHeader({
           <h1 className="font-display text-2xl font-bold tracking-tight text-navy-900">
             Kesariya 4.0
           </h1>
+          <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700">
+            Aaradhana Group
+          </span>
           <EventStatusPill />
         </div>
         <p className="mt-1 text-sm text-navy-700/55">11–20 Oct 2026 · Surat</p>

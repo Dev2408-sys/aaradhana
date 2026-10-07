@@ -21,6 +21,10 @@ import {
 } from '../utils/navratri-days';
 import { resolveEventDay } from './event-day.service';
 import { resolvePriceForDay } from './pricing.service';
+import {
+  getReceivingUpiAccount,
+  maybeRotateAfterApproval,
+} from './upi-account.service';
 
 function isAdmin(user: AuthUser) {
   return user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
@@ -68,6 +72,9 @@ const saleInclude = {
   },
   customer: true,
   event: { select: { id: true, name: true } },
+  upiAccount: {
+    select: { id: true, label: true, upiId: true, payeeName: true },
+  },
   items: {
     include: {
       ticket: {
@@ -141,6 +148,10 @@ function mapSale(sale: Prisma.SaleGetPayload<{ include: typeof saleInclude }>) {
     deliveryStatus: sale.deliveryStatus,
     adminPaymentUtr: sale.adminPaymentUtr,
     adminPaymentProofUrl: sale.adminPaymentProofUrl,
+    upiAccountId: sale.upiAccountId ?? null,
+    upiIdSnapshot: sale.upiIdSnapshot ?? null,
+    upiPayeeNameSnapshot: sale.upiPayeeNameSnapshot ?? null,
+    upiAccountLabel: sale.upiAccount?.label ?? null,
     approvedAt: sale.approvedAt,
     ticketsTransferredAt: sale.ticketsTransferredAt,
     whatsappSentAt: sale.whatsappSentAt,
@@ -370,6 +381,8 @@ export async function createSale(
       const saleNumber = await reserveSaleNumber(tx);
       const now = new Date();
 
+      const receivingUpi = await getReceivingUpiAccount(event.id, tx);
+
       const sale = await tx.sale.create({
         data: {
           saleNumber,
@@ -389,6 +402,9 @@ export async function createSale(
           deliveryStatus: autoConfirm ? 'AWAITING_PAYMENT' : 'AWAITING_APPROVAL',
           adminPaymentUtr,
           adminPaymentProofUrl,
+          upiAccountId: receivingUpi?.id ?? null,
+          upiIdSnapshot: receivingUpi?.upiId ?? null,
+          upiPayeeNameSnapshot: receivingUpi?.payeeName ?? null,
           approvedAt: autoConfirm ? now : null,
           approvedByUserId: autoConfirm ? actor.id : null,
           soldAt: now,
@@ -485,11 +501,17 @@ export async function createSale(
             sellerProfit: moneyNumber(totalMargin),
             saleStatus: autoConfirm ? 'CONFIRMED' : 'PENDING',
             adminPaymentProofUrl,
+            upiAccountId: receivingUpi?.id ?? null,
+            upiIdSnapshot: receivingUpi?.upiId ?? null,
           },
           ipAddress,
         },
         tx,
       );
+
+      if (autoConfirm && receivingUpi) {
+        await maybeRotateAfterApproval(receivingUpi.id, actor.id, ipAddress, tx);
+      }
 
       await createAuditLog(
         {

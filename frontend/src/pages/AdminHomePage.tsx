@@ -103,7 +103,7 @@ export function AdminHomePage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">
-            Kesariya Navratri 4.0
+            Kesariya Navratri 4.0 · Aaradhana Group
           </p>
           <h1 className="font-display text-2xl font-bold text-navy-900 sm:text-3xl">
             Event control room

@@ -182,14 +182,25 @@ export function SellerSaleDetailPage() {
         </p>
       </Card>
 
-      {sale.adminPaymentProofUrl && (
+      {(sale.adminPaymentProofUrl || sale.upiIdSnapshot) && (
         <Card>
           <h2 className="font-display mb-2 text-base font-semibold">Payment proof</h2>
-          <img
-            src={mediaUrl(sale.adminPaymentProofUrl) ?? undefined}
-            alt="Payment proof"
-            className="max-h-56 w-full rounded-[var(--radius-md)] border border-navy-700/10 object-contain"
-          />
+          {sale.upiIdSnapshot && (
+            <p className="mb-2 text-sm text-navy-700/70">
+              Paid to:{' '}
+              <span className="font-semibold text-navy-900">
+                {sale.upiAccountLabel ? `${sale.upiAccountLabel} · ` : ''}
+                {sale.upiIdSnapshot}
+              </span>
+            </p>
+          )}
+          {sale.adminPaymentProofUrl && (
+            <img
+              src={mediaUrl(sale.adminPaymentProofUrl) ?? undefined}
+              alt="Payment proof"
+              className="max-h-56 w-full rounded-[var(--radius-md)] border border-navy-700/10 object-contain"
+            />
+          )}
         </Card>
       )}
 

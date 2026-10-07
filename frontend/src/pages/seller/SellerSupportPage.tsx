@@ -67,7 +67,7 @@ export function SellerSupportPage() {
   const me = meQuery.data;
   const display = formatWhatsAppDisplay(wa);
   const message = [
-    'Hello Kesariya support,',
+    'Hello Kesariya / Aaradhana Group support,',
     '',
     `Seller: ${me?.name ?? ''} (${me?.sellerCode ?? ''})`,
     `Mobile: ${me?.mobile ?? ''}`,

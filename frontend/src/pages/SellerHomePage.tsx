@@ -41,6 +41,7 @@ export function SellerHomePage() {
                 Event
               </p>
               <p className="font-display mt-1 text-xl font-semibold">Kesariya Navratri 4.0</p>
+              <p className="mt-0.5 text-xs font-medium text-orange-300">Aaradhana Group</p>
               <p className="mt-2 flex items-center gap-1.5 text-sm text-white/65">
                 <MapPin className="h-3.5 w-3.5 text-orange-400" aria-hidden />
                 Kesariya AC Dome · VIP Road, Vesu

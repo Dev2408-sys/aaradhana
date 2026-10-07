@@ -134,7 +134,7 @@ export function SellerJoinPage() {
   };
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2">
+    <div className="min-h-screen lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <AuthBrandPanel
         title="Join the official seller network"
         subtitle={`Invited via ${sellerCode || '…'}. Create your profile, set a password, and wait for admin activation before selling tickets.`}

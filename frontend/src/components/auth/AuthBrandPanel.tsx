@@ -1,66 +1,92 @@
 import { Link } from 'react-router-dom';
-import { KesariyaPattern } from '../../assets/patterns/KesariyaPattern';
-import { EventStatusPill } from '../ui/event-status-pill';
+import { BRAND } from '../../lib/brand';
 
 export function AuthBrandPanel({
-  eyebrow = 'Kesariya Navratri 4.0',
   title,
   subtitle,
 }: {
-  eyebrow?: string;
   title: string;
   subtitle: string;
 }) {
   return (
-    <div className="relative overflow-hidden bg-navy-950 px-6 py-10 text-white sm:px-10 sm:py-14 lg:min-h-full lg:px-12 lg:py-16">
-      <KesariyaPattern className="text-white" opacity={0.09} />
-      <div
-        className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-orange-500/25 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-orange-400/10 blur-3xl"
-        aria-hidden
-      />
+    <aside className="relative hidden min-h-full overflow-hidden bg-[#1B0A3C] text-[#FFF4E2] lg:flex lg:flex-col">
+      <div className="absolute inset-0">
+        <img
+          src="/landing/hero-1920.jpg"
+          alt=""
+          className="h-full w-full object-cover object-[center_18%]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-[#1B0A3C]/70 via-[#2E0F63]/50 to-[#1B0A3C]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-[#1B0A3C] via-[#1B0A3C]/95 to-transparent"
+          aria-hidden
+        />
+      </div>
 
-      <div className="relative mx-auto flex h-full max-w-lg flex-col justify-between gap-10 lg:mx-0">
-        <div className="flex items-start justify-between gap-3">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-orange-500 font-display text-lg font-bold text-white">
-              K4
-            </span>
-            <span>
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-400">
-                {eyebrow}
-              </span>
-              <span className="font-display text-lg font-semibold">Seller OS</span>
-            </span>
-          </Link>
-          <EventStatusPill className="bg-white/10 text-orange-300" />
-        </div>
+      <div className="relative z-10 flex min-h-[min(100vh,960px)] flex-1 flex-col justify-between px-10 py-12 xl:px-14 xl:py-14">
+        {/* Dual logos — Kesariya + Aaradhana */}
+        <Link to="/" className="group inline-flex flex-col gap-4">
+          <div className="flex items-center gap-4 xl:gap-5">
+            <img
+              src={BRAND.logoSrc}
+              alt={BRAND.eventFull}
+              className="h-[5.25rem] w-auto drop-shadow-[0_10px_28px_rgba(0,0,0,0.4)] transition duration-300 group-hover:scale-[1.02] xl:h-28"
+            />
+            <span
+              className="h-14 w-px shrink-0 bg-gradient-to-b from-transparent via-[#F6C243]/70 to-transparent xl:h-16"
+              aria-hidden
+            />
+            <img
+              src={BRAND.aaradhanaLogoSrc}
+              alt={BRAND.group}
+              className="h-[5.25rem] w-auto rounded-full drop-shadow-[0_10px_28px_rgba(0,0,0,0.4)] ring-2 ring-[#F6C243]/45 transition duration-300 group-hover:scale-[1.02] xl:h-28"
+            />
+          </div>
+          <div>
+            <p className="font-display text-xl font-bold tracking-tight text-white xl:text-2xl">
+              {BRAND.eventFull}
+            </p>
+            <p className="mt-1 text-sm font-semibold tracking-[0.04em] text-[#F6C243]">
+              {BRAND.group}
+            </p>
+          </div>
+        </Link>
 
-        <div>
-          <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+        <div className="max-w-md space-y-4">
+          <div className="h-1 w-14 rounded-full bg-gradient-to-r from-[#F6C243] to-[#F0801A]" />
+          <h1 className="font-display text-4xl font-bold leading-[1.05] text-white xl:text-5xl">
             {title}
           </h1>
-          <p className="mt-4 max-w-md text-base text-white/70">{subtitle}</p>
+          <p className="text-base leading-relaxed text-[#FFF4E2]/80 xl:text-[1.05rem]">
+            {subtitle}
+          </p>
         </div>
 
-        <dl className="grid grid-cols-3 gap-3 border-t border-white/10 pt-6 text-sm">
+        <div className="grid grid-cols-3 gap-4 border-t border-white/15 pt-6">
           <div>
-            <dt className="text-white/45">Event</dt>
-            <dd className="mt-1 font-semibold">11–20 Oct</dd>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F6C243]/80">
+              Dates
+            </p>
+            <p className="mt-1.5 text-sm font-semibold text-white">11–20 Oct 2026</p>
           </div>
           <div>
-            <dt className="text-white/45">Venue</dt>
-            <dd className="mt-1 font-semibold">AC Dome</dd>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F6C243]/80">
+              Venue
+            </p>
+            <p className="mt-1.5 text-sm font-semibold text-white">Kesariya AC Dome</p>
           </div>
           <div>
-            <dt className="text-white/45">City</dt>
-            <dd className="mt-1 font-semibold">Surat</dd>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F6C243]/80">
+              City
+            </p>
+            <p className="mt-1.5 text-sm font-semibold text-white">Vesu, Surat</p>
           </div>
-        </dl>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 }

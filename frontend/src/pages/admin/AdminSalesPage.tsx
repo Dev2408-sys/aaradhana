@@ -51,7 +51,7 @@ export function AdminSalesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Kesariya Navratri 4.0"
+        eyebrow="Kesariya Navratri 4.0 · Aaradhana Group"
         title={isApprovals ? 'Approvals' : 'Sales'}
         description={
           isApprovals
@@ -159,6 +159,7 @@ export function AdminSalesPage() {
                     <p className="font-semibold text-navy-900">{sale.customer.name}</p>
                     <p className="text-xs text-navy-700/55">
                       {sale.seller.name} · Day {sale.eventDay ?? '—'} · {sale.totalQuantity} tix
+                      {sale.upiIdSnapshot ? ` · ${sale.upiIdSnapshot}` : ''}
                     </p>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       <StatusBadge status={sale.customerPaymentStatus} kind="payment" />
@@ -185,6 +186,7 @@ export function AdminSalesPage() {
                 <th className="px-2 py-3">Tickets</th>
                 <th className="px-2 py-3">Total</th>
                 <th className="px-2 py-3">Base</th>
+                <th className="px-2 py-3">Paid to</th>
                 <th className="px-2 py-3">Margin</th>
                 <th className="px-2 py-3">Status</th>
                 <th className="px-2 py-3">Pay</th>
@@ -229,6 +231,9 @@ export function AdminSalesPage() {
                   <td className="px-2 py-3 font-semibold">{sale.totalQuantity}</td>
                   <td className="px-2 py-3">{rupee(sale.totalAmount)}</td>
                   <td className="px-2 py-3">{rupee(sale.baseAmount)}</td>
+                  <td className="px-2 py-3 font-mono text-[11px] text-navy-700/70">
+                    {sale.upiIdSnapshot ?? '—'}
+                  </td>
                   <td className="px-2 py-3">{rupee(sale.sellerProfit)}</td>
                   <td className="px-2 py-3">
                     <StatusBadge status={sale.saleStatus} kind="sale" />

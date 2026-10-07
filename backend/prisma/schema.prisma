@@ -208,8 +208,14 @@ model Event {
   eventDays        EventDay[]
   dayPrices        EventDayPrice[]
   paymentSettings  PaymentSettings?
+  upiAccounts      UpiAccount[]
 
   @@map("events")
+}
+
+enum UpiAccountStatus {
+  ACTIVE
+  INACTIVE
 }
 
 /// Navratri festival nights (Day 1–10) — business day in Asia/Kolkata.
@@ -262,23 +268,55 @@ model EventDayPrice {
 
 /// Admin UPI / settlement instructions shown to sellers.
 model PaymentSettings {
-  id               String   @id @default(uuid()) @db.Uuid
-  eventId          String   @unique @map("event_id") @db.Uuid
-  upiId            String?  @map("upi_id")
-  upiPayeeName     String?  @map("upi_payee_name")
-  upiInstructions  String?  @map("upi_instructions")
+  id                       String   @id @default(uuid()) @db.Uuid
+  eventId                  String   @unique @map("event_id") @db.Uuid
+  /// Legacy single-UPI fields — kept in sync with receiving UpiAccount
+  upiId                    String?  @map("upi_id")
+  upiPayeeName             String?  @map("upi_payee_name")
+  upiInstructions          String?  @map("upi_instructions")
   /// Optional uploaded QR image; otherwise QR is generated from UPI ID
-  upiQrImageUrl    String?  @map("upi_qr_image_url")
+  upiQrImageUrl            String?  @map("upi_qr_image_url")
   /// Seller support WhatsApp (digits with country code, e.g. 9198…)
-  supportWhatsapp  String?  @map("support_whatsapp")
+  supportWhatsapp          String?  @map("support_whatsapp")
   /// Legacy flag — UTR is no longer required for sell flow (screenshot proof instead)
-  requireUtrForUpi Boolean  @default(false) @map("require_utr_for_upi")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  requireUtrForUpi         Boolean  @default(false) @map("require_utr_for_upi")
+  /// Day-wise rotate default (admin base ₹) applied to new UPI accounts
+  defaultRotateLimitAmount Decimal  @default(100000) @map("default_rotate_limit_amount") @db.Decimal(12, 2)
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
 
   event Event @relation(fields: [eventId], references: [id])
 
   @@map("payment_settings")
+}
+
+/// Multiple admin UPI settlement accounts with day-wise receiving rotation.
+model UpiAccount {
+  id                String           @id @default(uuid()) @db.Uuid
+  eventId           String           @map("event_id") @db.Uuid
+  label             String
+  upiId             String           @map("upi_id")
+  payeeName         String           @map("payee_name")
+  qrImageUrl        String?          @map("qr_image_url")
+  instructions      String?
+  status            UpiAccountStatus @default(ACTIVE)
+  /// Preferred default account (admin "main")
+  isMain            Boolean          @default(false) @map("is_main")
+  /// Currently receiving payments from sellers (one ACTIVE at a time)
+  isReceiving       Boolean          @default(false) @map("is_receiving")
+  /// Day-wise approved baseAmount limit before auto-rotate
+  rotateLimitAmount Decimal          @default(100000) @map("rotate_limit_amount") @db.Decimal(12, 2)
+  sortOrder         Int              @default(0) @map("sort_order")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  event Event  @relation(fields: [eventId], references: [id])
+  sales Sale[]
+
+  @@index([eventId, status])
+  @@index([eventId, isReceiving])
+  @@index([eventId, sortOrder])
+  @@map("upi_accounts")
 }
 
 /// Idempotent demo dataset marker — prevents duplicate demo sales on re-seed.
@@ -410,6 +448,10 @@ model Sale {
   adminPaymentUtr  String?                @map("admin_payment_utr")
   /// Payment screenshot URL (seller → admin UPI proof)
   adminPaymentProofUrl String?            @map("admin_payment_proof_url")
+  /// UPI account shown to seller at booking time
+  upiAccountId         String?            @map("upi_account_id") @db.Uuid
+  upiIdSnapshot        String?            @map("upi_id_snapshot")
+  upiPayeeNameSnapshot String?            @map("upi_payee_name_snapshot")
   approvedAt       DateTime?              @map("approved_at")
   approvedByUserId String?                @map("approved_by_user_id") @db.Uuid
   rejectedAt       DateTime?              @map("rejected_at")
@@ -426,6 +468,7 @@ model Sale {
   customer       Customer           @relation(fields: [customerId], references: [id])
   event          Event              @relation(fields: [eventId], references: [id])
   eventDayRef    EventDay?          @relation(fields: [eventDayId], references: [id])
+  upiAccount     UpiAccount?        @relation(fields: [upiAccountId], references: [id])
   approvedBy     User?              @relation("SaleApprovedBy", fields: [approvedByUserId], references: [id])
   whatsappSentBy User?              @relation("SaleWhatsappSentBy", fields: [whatsappSentByUserId], references: [id])
   items          SaleItem[]
@@ -447,6 +490,8 @@ model Sale {
   @@index([deliveryStatus])
   @@index([adminPaymentUtr])
   @@index([adminPaymentProofUrl])
+  @@index([upiAccountId])
+  @@index([upiAccountId, approvedAt])
   @@index([eventId, saleStatus, eventDay])
   @@index([eventId, saleStatus, sellerId])
   @@map("sales")
