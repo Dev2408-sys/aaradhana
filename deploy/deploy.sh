@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
-# Deploy / update Aaradhana on Contabo VPS.
-# Run from repo root on the server:  bash deploy/deploy.sh
+# One-shot deploy on Contabo VPS:
+#   cd /var/www/aaradhana && bash deploy/deploy.sh
+#
+# Pulls latest main, migrates DB, builds API + frontend, reloads PM2 + nginx.
 set -euo pipefail
 
 APP_ROOT="${APP_ROOT:-/var/www/aaradhana}"
+BRANCH="${BRANCH:-main}"
 cd "$APP_ROOT"
 
-echo "==> Aaradhana deploy @ $APP_ROOT"
+echo "==> Aaradhana deploy @ $APP_ROOT (branch: $BRANCH)"
 
 if [[ ! -f backend/.env ]]; then
   echo "ERROR: backend/.env missing. Copy backend/.env.production.example → backend/.env and edit."
   exit 1
 fi
 
-echo "==> Backend deps + build"
+echo "==> Git pull"
+git fetch origin "$BRANCH"
+git pull --ff-only origin "$BRANCH"
+
+echo "==> Backend deps + migrate + build"
 cd backend
-# Need devDependencies (@types/*) for `tsc` build
 npm ci
 npx prisma generate
 npx prisma migrate deploy
@@ -41,6 +47,15 @@ else
 fi
 pm2 save
 
-echo "==> Done"
-echo "    Health: curl -sS https://aaradhana.khodi.in/api/health || curl -sS http://127.0.0.1:4010/api/health"
-echo "    Site:   https://aaradhana.khodi.in"
+if command -v nginx >/dev/null 2>&1; then
+  echo "==> Reload nginx"
+  nginx -t && systemctl reload nginx
+fi
+
+echo "==> Health check"
+curl -sS http://127.0.0.1:4010/api/health || true
+echo
+curl -sS https://aaradhana.khodi.in/api/health || true
+echo
+
+echo "==> Done → https://aaradhana.khodi.in"
