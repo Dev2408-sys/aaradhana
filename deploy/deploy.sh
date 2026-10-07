@@ -15,7 +15,8 @@ fi
 
 echo "==> Backend deps + build"
 cd backend
-npm ci --omit=dev
+# Need devDependencies (@types/*) for `tsc` build
+npm ci
 npx prisma generate
 npx prisma migrate deploy
 npm run build
