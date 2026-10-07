@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Headphones, MessageCircle } from 'lucide-react';
+import { Eye, EyeOff, Phone } from 'lucide-react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { getErrorMessage } from '../api/client';
@@ -191,49 +191,65 @@ export function LoginPage() {
                 Join
               </Button>
             </div>
-            <p className="mt-3 text-xs text-navy-700/50">
-              After activation, sign in here and keep your profile & password updated.
-            </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-orange-50 p-4 shadow-[0_8px_24px_rgba(16,185,129,0.08)]">
-            <div
-              className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[#25D366]/15 blur-2xl"
-              aria-hidden
-            />
-            <div className="relative flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-md shadow-emerald-500/30">
-                <Headphones className="h-5 w-5" aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                  Seller &amp; dealer support
-                </p>
-                <p className="mt-0.5 font-display text-base font-bold text-navy-900">
-                  Need help joining or selling?
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-navy-700/65">
-                  WhatsApp on our support line for invite codes, login help, and dealer onboarding.
-                </p>
+          {/* Seller / dealer support — matches brand purple panel */}
+          <div className="overflow-hidden rounded-2xl bg-[#2E0F63] text-[#FFF4E2] shadow-[0_12px_32px_rgba(46,15,99,0.22)]">
+            <div className="h-1 w-full bg-gradient-to-r from-[#F6C243] via-[#F0801A] to-[#F6C243]" />
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#F6C243]">
+                    Seller &amp; dealer support
+                  </p>
+                  <p className="font-display mt-1 text-lg font-bold text-white">
+                    Talk to {BRAND.group}
+                  </p>
+                </div>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-[#F6C243]/35">
+                  <Phone className="h-4 w-4 text-[#F6C243]" aria-hidden />
+                </span>
+              </div>
+
+              <p className="mt-2 text-xs leading-relaxed text-[#FFF4E2]/70">
+                Invite code, login help, or dealer onboarding — reply in minutes on WhatsApp.
+              </p>
+
+              <a
+                href={`tel:${BRAND.supportPhoneTel}`}
+                className="mt-3 flex items-center gap-2 rounded-xl bg-white/8 px-3 py-2.5 ring-1 ring-white/10 transition hover:bg-white/12"
+              >
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-[#FFF4E2]/45">
+                  Call / WhatsApp
+                </span>
+                <span className="ml-auto font-mono text-base font-bold tracking-wide text-white">
+                  {BRAND.supportPhoneDisplay}
+                </span>
+              </a>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <a
                   href={`tel:${BRAND.supportPhoneTel}`}
-                  className="mt-2 inline-block font-mono text-sm font-bold text-navy-900 hover:text-orange-600"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#F6C243]/45 bg-transparent text-sm font-semibold text-[#F6C243] transition hover:bg-[#F6C243]/10"
                 >
-                  {BRAND.supportPhoneDisplay}
+                  <Phone className="h-4 w-4" aria-hidden />
+                  Call
+                </a>
+                <a
+                  href={`https://wa.me/${BRAND.supportWhatsApp}?text=${encodeURIComponent(
+                    `Hello ${BRAND.group} — I need help with Kesariya seller / dealer access.`,
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] text-sm font-bold text-white transition hover:bg-[#1ebe57]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+                    <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm5.6 14.1c-.2.7-1.4 1.3-2 1.4-.5 0-1.1.2-3.6-.8-3-1.3-4.9-4.4-5-4.6-.2-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.2-.3.5-.4.7-.4h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.4.6-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.4.1.6-.1l.9-1c.2-.2.4-.2.6-.1l2 1c.2.1.4.2.4.3.1.1.1.6-.1 1.3z" />
+                  </svg>
+                  WhatsApp
                 </a>
               </div>
             </div>
-            <a
-              href={`https://wa.me/${BRAND.supportWhatsApp}?text=${encodeURIComponent(
-                `Hello ${BRAND.group} support — I need help with Kesariya seller / dealer access.`,
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] text-sm font-bold text-white shadow-md shadow-emerald-500/25 transition hover:bg-[#1ebe57]"
-            >
-              <MessageCircle className="h-4 w-4" aria-hidden />
-              WhatsApp support
-            </a>
           </div>
         </div>
       </div>
