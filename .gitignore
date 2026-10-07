@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+.vite/
+*.tsbuildinfo
+backend/prisma/*.db
+backend/prisma/*.db-journal
+backend/uploads/
+
+backend/node_modules/
+frontend/node_modules/
+
