@@ -41,10 +41,9 @@ chmod -R u+rwX backend/uploads
 echo "==> Restart API (PM2)"
 mkdir -p /var/log/pm2
 if pm2 describe aaradhana-api >/dev/null 2>&1; then
-  pm2 reload deploy/ecosystem.config.cjs --update-env
-else
-  pm2 start deploy/ecosystem.config.cjs
+  pm2 delete aaradhana-api >/dev/null 2>&1 || true
 fi
+pm2 start deploy/ecosystem.config.cjs --update-env
 pm2 save
 
 if command -v nginx >/dev/null 2>&1; then
@@ -53,7 +52,14 @@ if command -v nginx >/dev/null 2>&1; then
 fi
 
 echo "==> Health check"
-curl -sS http://127.0.0.1:4010/api/health || true
+sleep 2
+if ! curl -fsS http://127.0.0.1:4010/api/health; then
+  echo
+  echo "ERROR: API not healthy. Recent logs:"
+  pm2 logs aaradhana-api --lines 40 --nostream || true
+  tail -n 40 /var/log/pm2/aaradhana-api-error.log 2>/dev/null || true
+  exit 1
+fi
 echo
 curl -sS https://aaradhana.khodi.in/api/health || true
 echo
