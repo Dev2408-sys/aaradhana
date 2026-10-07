@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Headphones, MessageCircle } from 'lucide-react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { getErrorMessage } from '../api/client';
@@ -194,6 +194,46 @@ export function LoginPage() {
             <p className="mt-3 text-xs text-navy-700/50">
               After activation, sign in here and keep your profile & password updated.
             </p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-orange-50 p-4 shadow-[0_8px_24px_rgba(16,185,129,0.08)]">
+            <div
+              className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[#25D366]/15 blur-2xl"
+              aria-hidden
+            />
+            <div className="relative flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-md shadow-emerald-500/30">
+                <Headphones className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                  Seller &amp; dealer support
+                </p>
+                <p className="mt-0.5 font-display text-base font-bold text-navy-900">
+                  Need help joining or selling?
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-navy-700/65">
+                  WhatsApp on our support line for invite codes, login help, and dealer onboarding.
+                </p>
+                <a
+                  href={`tel:${BRAND.supportPhoneTel}`}
+                  className="mt-2 inline-block font-mono text-sm font-bold text-navy-900 hover:text-orange-600"
+                >
+                  {BRAND.supportPhoneDisplay}
+                </a>
+              </div>
+            </div>
+            <a
+              href={`https://wa.me/${BRAND.supportWhatsApp}?text=${encodeURIComponent(
+                `Hello ${BRAND.group} support — I need help with Kesariya seller / dealer access.`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] text-sm font-bold text-white shadow-md shadow-emerald-500/25 transition hover:bg-[#1ebe57]"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              WhatsApp support
+            </a>
           </div>
         </div>
       </div>
