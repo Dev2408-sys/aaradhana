@@ -1,0 +1,21 @@
+{
+  "name": "aaradhana-kesariya",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Kesariya Navratri 4.0 Seller OS — Aaradhana",
+  "scripts": {
+    "dev:api": "npm --prefix backend run dev",
+    "dev:web": "npm --prefix frontend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "build:api": "npm --prefix backend run build",
+    "build:web": "npm --prefix frontend run build",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend exec -- tsc --noEmit",
+    "test": "npm --prefix backend test",
+    "db:migrate": "npm --prefix backend run prisma:migrate",
+    "db:deploy": "npm --prefix backend run prisma:deploy",
+    "db:seed": "npm --prefix backend run seed:demo"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

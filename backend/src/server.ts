@@ -8,8 +8,10 @@ async function bootstrap() {
   logger.info('Database connected');
 
   const app = createApp();
-  app.listen(env.PORT, () => {
-    logger.info(`Kesariya API listening on http://localhost:${env.PORT}`);
+  // Production: bind localhost only — nginx proxies public traffic
+  const host = env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0';
+  app.listen(env.PORT, host, () => {
+    logger.info(`Kesariya API listening on http://${host}:${env.PORT}`);
   });
 }
 

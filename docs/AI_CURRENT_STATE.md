@@ -303,11 +303,18 @@ Quick admin test: `8888888888` / `Kesariya@123`.
 
 ---
 
-## 14. Suggested next work (not started)
+## 14. Production deploy (Contabo)
+
+- Domain: `aaradhana.khodi.in`
+- Path: `/var/www/aaradhana`
+- Guide: `docs/DEPLOY_CONTABO.md`
+- Scripts: `deploy/first-setup.sh`, `deploy/deploy.sh`, `deploy/nginx/`, `deploy/ecosystem.config.cjs`
+- API binds `127.0.0.1:4010`; nginx serves SPA + proxies `/api` + `/uploads`
+
+## 15. Suggested next work (not started)
 
 - Phase 9: CSV/XLSX reports
 - Leaderboard / daily targets UX
-- Production deploy hardening
 - Optional: re-enable master-seller team view as a separate scoped feature
 - Optional: cloud object storage for screenshots instead of local disk
 
