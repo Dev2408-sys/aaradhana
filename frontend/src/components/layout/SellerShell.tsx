@@ -39,7 +39,11 @@ export function SellerShell() {
         />
       )}
 
-      <main className="relative z-10 w-full pt-4">
+      <main
+        className={
+          meta.variant === 'home' ? 'relative z-10 w-full pt-5' : 'relative z-10 w-full pt-4'
+        }
+      >
         {/* PageContainer already applies horizontal padding — do not double it */}
         <PageContainer size={size}>
           <Outlet />

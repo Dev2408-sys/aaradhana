@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, MapPin, Ticket } from 'lucide-react';
+import { ChevronRight, Ticket } from 'lucide-react';
 import { getSalesSummary, listSales } from '../api/sales';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
-import { KesariyaPattern } from '../assets/patterns/KesariyaPattern';
 
 export function SellerHomePage() {
   const summaryQuery = useQuery({ queryKey: ['sales-summary'], queryFn: getSalesSummary });
@@ -32,28 +31,8 @@ export function SellerHomePage() {
 
   return (
     <div className="animate-kesariya-in space-y-5">
-      <Card className="relative overflow-hidden border-0 bg-navy-950 p-0 text-white shadow-[var(--shadow-elevated)]">
-        <KesariyaPattern className="text-white" opacity={0.1} />
-        <div className="relative px-5 py-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-400">
-                Event
-              </p>
-              <p className="font-display mt-1 text-xl font-semibold">Kesariya Navratri 4.0</p>
-              <p className="mt-0.5 text-xs font-medium text-orange-300">Aaradhana Group</p>
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-white/65">
-                <MapPin className="h-3.5 w-3.5 text-orange-400" aria-hidden />
-                Kesariya AC Dome · VIP Road, Vesu
-              </p>
-              <p className="mt-1 text-xs text-white/45">11–20 October 2026</p>
-            </div>
-          </div>
-        </div>
-      </Card>
-
       <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-navy-700/45">
+        <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-navy-700/45">
           Today&apos;s performance
         </p>
         {loading ? (
@@ -83,13 +62,13 @@ export function SellerHomePage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card className="border-amber-200/70 bg-amber-50/50 p-4">
+        <Card className="border-amber-200/70 bg-amber-50/50 p-4 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
             Pending approvals
           </p>
           <p className="font-display mt-1 text-2xl font-bold text-amber-800">{pending}</p>
         </Card>
-        <Card className="border-emerald-200/70 bg-emerald-50/40 p-4">
+        <Card className="border-emerald-200/70 bg-emerald-50/40 p-4 text-center">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800/70">
             Approved tickets
           </p>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BRAND } from '../lib/brand';
 import './HomePage.css';
 
 const EVENT_START = new Date('2026-10-11T19:00:00+05:30').getTime();
@@ -7,9 +8,6 @@ const MAPS_URL =
   'https://www.google.com/maps/place/Bhagwan+Mahavir+University/@21.1401463,72.7941876,17z';
 const MAP_EMBED =
   'https://maps.google.com/maps?q=21.1401463,72.7941876&t=&z=17&ie=UTF8&iwloc=&output=embed';
-const CONTACT_PHONE_DISPLAY = '+91 70415 01799';
-const CONTACT_PHONE_TEL = '+917041501799';
-const CONTACT_WHATSAPP = '917041501799';
 
 const ARTISTS = [
   {
@@ -397,8 +395,8 @@ export function HomePage() {
                   <span className="dot" aria-hidden />
                   Become a Seller Now
                 </Link>
-                <a className="btn btn--ghost" href={`tel:${CONTACT_PHONE_TEL}`}>
-                  Call · {CONTACT_PHONE_DISPLAY}
+                <a className="btn btn--ghost" href={`tel:${BRAND.supportPhoneTel}`}>
+                  Call · {BRAND.supportPhoneDisplay}
                 </a>
               </div>
             </div>
@@ -426,7 +424,7 @@ export function HomePage() {
               </p>
               <div className="landing-socials">
                 <a
-                  href="https://instagram.com/kesariyanavratri"
+                  href={BRAND.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
@@ -436,7 +434,7 @@ export function HomePage() {
                   </svg>
                 </a>
                 <a
-                  href={`https://wa.me/${CONTACT_WHATSAPP}`}
+                  href={`https://wa.me/${BRAND.supportWhatsApp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="WhatsApp"
@@ -468,16 +466,12 @@ export function HomePage() {
               <p>
                 Seller support &amp; enquiries
                 <br />
-                <a href={`tel:${CONTACT_PHONE_TEL}`}>{CONTACT_PHONE_DISPLAY}</a>
+                <a href={`tel:${BRAND.supportPhoneTel}`}>{BRAND.supportPhoneDisplay}</a>
                 <br />
-                <a href="mailto:Kesariyanavratri3.0@gmail.com">Kesariyanavratri3.0@gmail.com</a>
+                <a href={`mailto:${BRAND.supportEmail}`}>{BRAND.supportEmail}</a>
                 <br />
-                <a
-                  href="https://instagram.com/kesariyanavratri"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  @kesariyanavratri
+                <a href={BRAND.instagramUrl} target="_blank" rel="noopener noreferrer">
+                  @{BRAND.instagramHandle}
                 </a>
               </p>
             </div>
