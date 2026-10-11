@@ -69,8 +69,10 @@ export function AdminWhatsappBulkPage() {
             </p>
           ) : (
             <p className="text-amber-950">
-              Server par <code>WHATSAPP_API_TOKEN</code>, <code>WHATSAPP_PHONE_ID</code>, ane{' '}
-              <code>WHATSAPP_API_URL</code> set karo, pachhi API restart.
+              Send bandh che karan ke API par WhatsApp token load nathi. Server par deploy pachhi
+              restart joiye. Token Khodi Mart <code>.env.prod</code> mathi aave, ke{' '}
+              <code>backend/.env</code> ma <code>WHATSAPP_API_TOKEN</code> ane{' '}
+              <code>WHATSAPP_PHONE_ID</code> hova joiye.
             </p>
           )}
         </Card>

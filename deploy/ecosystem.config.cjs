@@ -9,6 +9,13 @@ const path = require('path');
 
 const APP_ROOT = '/var/www/aaradhana';
 const ENV_PATH = path.join(APP_ROOT, 'backend', '.env');
+const KHODI_ENV_PATH = '/var/www/khodi-mart/.env.prod';
+const WHATSAPP_KEYS = [
+  'WHATSAPP_API_TOKEN',
+  'WHATSAPP_PHONE_ID',
+  'WHATSAPP_API_URL',
+  'WHATSAPP_DEV_MODE',
+];
 
 function loadEnvFile(filePath) {
   const out = {};
@@ -32,6 +39,10 @@ function loadEnvFile(filePath) {
 }
 
 const fileEnv = loadEnvFile(ENV_PATH);
+const khodiEnv = loadEnvFile(KHODI_ENV_PATH);
+for (const key of WHATSAPP_KEYS) {
+  if (!fileEnv[key] && khodiEnv[key]) fileEnv[key] = khodiEnv[key];
+}
 
 module.exports = {
   apps: [
