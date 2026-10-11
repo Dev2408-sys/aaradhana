@@ -15,6 +15,7 @@ import pricingRoutes from './pricing.routes';
 import paymentSettingsRoutes from './payment-settings.routes';
 import notificationRoutes from './notification.routes';
 import uploadRoutes from './upload.routes';
+import whatsappRoutes from './whatsapp.routes';
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use('/seller-payments', sellerPaymentRoutes);
 router.use('/accounting', accountingRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/whatsapp', whatsappRoutes);
 
 export default router;

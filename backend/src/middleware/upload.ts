@@ -1,7 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import { PAYMENT_PROOF_DIR, UPI_QR_DIR, ensureUploadDirs } from '../config/uploads';
+import { PAYMENT_PROOF_DIR, UPI_QR_DIR, WHATSAPP_DIR, ensureUploadDirs } from '../config/uploads';
 
 ensureUploadDirs();
 
@@ -42,5 +42,11 @@ export const paymentProofUpload = multer({
 export const upiQrUpload = multer({
   storage: diskStorage(UPI_QR_DIR),
   limits: { fileSize: 3 * 1024 * 1024 },
+  fileFilter: imageFilter,
+});
+
+export const whatsappImageUpload = multer({
+  storage: diskStorage(WHATSAPP_DIR),
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: imageFilter,
 });

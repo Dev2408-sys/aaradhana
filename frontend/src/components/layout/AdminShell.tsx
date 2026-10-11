@@ -11,6 +11,7 @@ import {
   Tag,
   QrCode,
   Wallet,
+  MessageCircle,
   LogOut,
   Menu,
   X,
@@ -102,6 +103,7 @@ export function AdminShell() {
     },
     { to: '/admin/pricing', label: 'Pricing', end: false, count: 0, icon: Tag },
     { to: '/admin/payment-settings', label: 'Payment', end: false, count: 0, icon: QrCode },
+    { to: '/admin/whatsapp', label: 'WhatsApp', end: false, count: 0, icon: MessageCircle },
     { to: '/admin/accounting', label: 'Accounting', end: false, count: 0, icon: Wallet },
   ];
 

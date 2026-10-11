@@ -19,6 +19,7 @@ import { AdminAccountingSellerDetailPage } from './pages/admin/AdminAccountingSe
 import { AdminAccountingPaymentsPage } from './pages/admin/AdminAccountingPaymentsPage';
 import { AdminPricingPage } from './pages/admin/AdminPricingPage';
 import { AdminPaymentSettingsPage } from './pages/admin/AdminPaymentSettingsPage';
+import { AdminWhatsappBulkPage } from './pages/admin/AdminWhatsappBulkPage';
 import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
 import { SellerHomePage } from './pages/SellerHomePage';
 import { SellerProfilePage } from './pages/seller/SellerProfilePage';
@@ -61,6 +62,7 @@ export default function App() {
                 <Route path="tickets" element={<AdminTicketsPage />} />
                 <Route path="pricing" element={<AdminPricingPage />} />
                 <Route path="payment-settings" element={<AdminPaymentSettingsPage />} />
+                <Route path="whatsapp" element={<AdminWhatsappBulkPage />} />
                 <Route path="accounting" element={<AdminAccountingPage />} />
                 <Route path="accounting/sellers" element={<AdminAccountingSellersPage />} />
                 <Route

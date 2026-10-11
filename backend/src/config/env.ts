@@ -15,6 +15,11 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   PUBLIC_REGISTRATION_STATUS: z.enum(['PENDING', 'ACTIVE']).default('PENDING'),
   LOG_LEVEL: z.string().default('info'),
+  /** Same keys as Khodi Mart production. Token and phone ID are required to send. */
+  WHATSAPP_API_TOKEN: z.string().optional().default(''),
+  WHATSAPP_PHONE_ID: z.string().optional().default(''),
+  WHATSAPP_API_URL: z.string().optional().default('https://graph.facebook.com/v25.0'),
+  WHATSAPP_DEV_MODE: z.string().optional().default('false'),
 });
 
 const parsed = envSchema.safeParse(process.env);
