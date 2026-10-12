@@ -1,11 +1,16 @@
 import { z } from 'zod';
+import { normalizeMobile } from '../utils/mobile';
 
 const mobileSchema = z
   .string()
   .trim()
-  .min(10)
-  .max(15)
-  .regex(/^[0-9+\- ]+$/);
+  .transform((value) => {
+    let digits = normalizeMobile(value);
+    if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+    if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+    return digits;
+  })
+  .pipe(z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile'));
 
 export const createSaleSchema = z.object({
   body: z.object({
@@ -76,12 +81,7 @@ export const approveSaleSchema = z.object({
   params: z.object({ id: z.string().uuid() }),
   body: z.object({
     confirmCustomerName: z.string().trim().min(2),
-    confirmCustomerMobile: z
-      .string()
-      .trim()
-      .min(10)
-      .max(15)
-      .regex(/^[0-9+\- ]+$/),
+    confirmCustomerMobile: mobileSchema,
     notes: z.string().trim().max(500).optional().nullable(),
   }),
 });

@@ -24,6 +24,13 @@ function rupee(n: number) {
   return `₹${n.toLocaleString('en-IN')}`;
 }
 
+function toMobileDigits(raw: string) {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  return digits;
+}
+
 const STEPS = [
   { id: 1, label: 'Day' },
   { id: 2, label: 'Tickets' },
@@ -198,7 +205,7 @@ export function SellerSellPage() {
       eventDay,
       customer: {
         name: customer.name.trim(),
-        mobile: customer.mobile.trim(),
+        mobile: toMobileDigits(customer.mobile),
         email: customer.email || null,
       },
       items,

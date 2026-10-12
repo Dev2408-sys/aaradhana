@@ -1,11 +1,16 @@
 import { z } from 'zod';
+import { normalizeMobile } from '../utils/mobile';
 
 const mobileSchema = z
   .string()
   .trim()
-  .min(10, 'Mobile must be at least 10 digits')
-  .max(15)
-  .regex(/^[0-9+\- ]+$/, 'Mobile contains invalid characters');
+  .transform((value) => {
+    let digits = normalizeMobile(value);
+    if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+    if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+    return digits;
+  })
+  .pipe(z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile'));
 
 const optionalEmail = z
   .union([z.string().trim().email(), z.literal(''), z.null()])
