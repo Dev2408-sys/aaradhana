@@ -9,6 +9,17 @@ import {
 } from '../utils/whatsapp-phones';
 
 const SEND_GAP_MS = 280;
+/** Meta sample sender. API says "sent" only for numbers on the test allowlist. */
+const TEST_PHONE_ID = '1222441257625130';
+/** Khodi Mart live line: +91 79843 37747 */
+const LIVE_PHONE_ID = '1245317021999582';
+const LIVE_PHONE_DISPLAY = '+91 79843 37747';
+
+function resolvePhoneId(raw: string) {
+  const phoneId = raw.trim();
+  if (!phoneId || phoneId === TEST_PHONE_ID) return LIVE_PHONE_ID;
+  return phoneId;
+}
 
 export type BulkSendResult = {
   to: string;
@@ -24,11 +35,14 @@ function devMode() {
 
 export function whatsappStatus() {
   const token = env.WHATSAPP_API_TOKEN.trim();
-  const phoneId = env.WHATSAPP_PHONE_ID.trim();
+  const configuredId = env.WHATSAPP_PHONE_ID.trim();
+  const phoneId = resolvePhoneId(configuredId);
   return {
     configured: Boolean(token && phoneId),
     apiUrl: env.WHATSAPP_API_URL.replace(/\/$/, ''),
     phoneIdLast4: phoneId.slice(-4),
+    fromDisplay: phoneId === LIVE_PHONE_ID ? LIVE_PHONE_DISPLAY : `…${phoneId.slice(-4)}`,
+    usingTestNumber: phoneId === TEST_PHONE_ID,
     devMode: devMode(),
     maxNumbers: WHATSAPP_BULK_LIMIT,
   };
@@ -40,7 +54,8 @@ function graphErrorMessage(body: unknown): { message: string; code?: number } {
   const raw = err?.message ?? 'WhatsApp API rejected the message';
   const hints: Record<number, string> = {
     190: 'Access token invalid. Update WHATSAPP_API_TOKEN.',
-    131030: 'Number is not on the Meta test allowlist. App must be Live.',
+    131030:
+      'This sender is still the Meta test number. Real customers are not on the allowlist.',
     131047: '24-hour window closed. Use an approved template with an image header.',
     131026: 'Number is not on WhatsApp or cannot be delivered.',
     132001: 'Template name or language does not match an approved template.',
@@ -68,7 +83,7 @@ async function graphFetch(url: string, init: RequestInit) {
 
 async function uploadMedia(filePath: string, mime: string) {
   const { apiUrl } = whatsappStatus();
-  const phoneId = env.WHATSAPP_PHONE_ID.trim();
+  const phoneId = resolvePhoneId(env.WHATSAPP_PHONE_ID);
   const bytes = fs.readFileSync(filePath);
   const form = new FormData();
   form.append('messaging_product', 'whatsapp');
@@ -90,7 +105,7 @@ async function uploadMedia(filePath: string, mime: string) {
 
 async function sendOne(payload: Record<string, unknown>, to: string): Promise<BulkSendResult> {
   const { apiUrl } = whatsappStatus();
-  const phoneId = env.WHATSAPP_PHONE_ID.trim();
+  const phoneId = resolvePhoneId(env.WHATSAPP_PHONE_ID);
   const res = await graphFetch(`${apiUrl}/${phoneId}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

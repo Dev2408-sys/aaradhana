@@ -4,6 +4,8 @@ export type WhatsappStatus = {
   configured: boolean;
   apiUrl: string;
   phoneIdLast4: string;
+  fromDisplay: string;
+  usingTestNumber: boolean;
   devMode: boolean;
   maxNumbers: number;
 };

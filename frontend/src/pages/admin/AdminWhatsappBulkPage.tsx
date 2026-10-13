@@ -64,7 +64,8 @@ export function AdminWhatsappBulkPage() {
         <Card className="p-4 text-sm text-navy-800">
           {configured ? (
             <p>
-              Connected · Graph {status.data.apiUrl} · phone ending {status.data.phoneIdLast4}
+              Connected · sending from {status.data.fromDisplay}
+              {status.data.usingTestNumber ? ' · Meta test number (real customers will fail)' : ''}
               {status.data.devMode ? ' · dev mode (no real send)' : ''}
             </p>
           ) : (

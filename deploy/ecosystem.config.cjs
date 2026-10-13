@@ -43,6 +43,10 @@ const khodiEnv = loadEnvFile(KHODI_ENV_PATH);
 for (const key of WHATSAPP_KEYS) {
   if (!fileEnv[key] && khodiEnv[key]) fileEnv[key] = khodiEnv[key];
 }
+// Khodi .env still points at Meta's +1 555 test number. Send from the live Indian line.
+if (!fileEnv.WHATSAPP_PHONE_ID || fileEnv.WHATSAPP_PHONE_ID === '1222441257625130') {
+  fileEnv.WHATSAPP_PHONE_ID = '1245317021999582';
+}
 
 module.exports = {
   apps: [
